@@ -20,48 +20,49 @@ class jenkins (
 	$dist_uri           = 'http://mirrors.jenkins-ci.org/war/latest/jenkins.war',
 	$private_key_source = '',
 	$public_key_source  = '',
+	$user_dir = '/home/jenkins'
 ) {
-  $user_dir = '/home/jenkins'
   $home     = "${user_dir}/.jenkins"
+  $user     = "tomcat${tomcat_version}"
 
   file { jenkins-user-dir:
   	path    => $user_dir,
     ensure  => directory,
-    owner   => "tomcat${tomcat_version}",
-    group   => "tomcat${tomcat_version}",
+    owner   => $user,
+    group   => $user,
     mode    => 0700,
     require => Package['tomcat'],
   }
   file { $home:
     ensure  => directory,
-    owner   => "tomcat${tomcat_version}",
-    group   => "tomcat${tomcat_version}",
+    owner   => $user,
+    group   => $user,
     require => File['jenkins-user-dir'],
   }
   file { "${user_dir}/.ant":
     ensure  => directory,
-    owner   => "tomcat${tomcat_version}",
-    group   => "tomcat${tomcat_version}",
+    owner   => $user,
+    group   => $user,
     require => File['jenkins-user-dir'],
   }
   file { "${user_dir}/.ant/lib":
     ensure  => directory,
-    owner   => "tomcat${tomcat_version}",
-    group   => "tomcat${tomcat_version}",
+    owner   => $user,
+    group   => $user,
     require => File["${user_dir}/.ant"],
   }
   file { "${user_dir}/.ssh":
     ensure  => directory,
-    owner   => "tomcat${tomcat_version}",
-    group   => "tomcat${tomcat_version}",
+    owner   => $user,
+    group   => $user,
     require => File['jenkins-user-dir'],
   }
   if $private_key_source != '' {
     file { "${user_dir}/.ssh/id_rsa":
       ensure  => file,
       source  => $private_key_source,
-      owner   => "tomcat${tomcat_version}",
-      group   => "tomcat${tomcat_version}",
+      owner   => $user,
+      group   => $user,
       mode    => 0600,
       require => File["${user_dir}/.ssh"],
     }
@@ -70,19 +71,19 @@ class jenkins (
     file { "${user_dir}/.ssh/id_rsa.pub":
       ensure  => file,
       source  => $public_key_source,
-      owner   => "tomcat${tomcat_version}",
-      group   => "tomcat${tomcat_version}",
+      owner   => $user,
+      group   => $user,
       mode    => 0644,
       require => File["${user_dir}/.ssh"],
     }
   }
 
-  exec { download-jenkins:
-    command   => "curl -v -L -o '/var/lib/tomcat${jenkins::tomcat_version}/webapps/jenkins.war' '${dist_uri}'",
-    user      => "tomcat${jenkins::tomcat_version}",
-    group     => "tomcat${jenkins::tomcat_version}",
+  exec { name-jenkins:
+    command   => "curl -v -L -o '/var/lib/${user}/webapps/jenkins.war' '${dist_uri}'",
+    user      => $user,
+    group     => $user,
     path      => ['/bin', '/usr/bin'],
-    creates   => "/var/lib/tomcat${jenkins::tomcat_version}/webapps/jenkins.war",
+    creates   => "/var/lib/${user}/webapps/jenkins.war",
     logoutput => true,
     require   => [ Package['tomcat'], File[$home] ],
   }
